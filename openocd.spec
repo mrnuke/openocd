@@ -1,6 +1,6 @@
 Name:       openocd
-Version:    0.10.0
-Release:    2%{?dist}
+Version:    0.10.1
+Release:    1%{?dist}
 Summary:    Debugging, in-system programming and boundary-scan testing for embedded devices
 
 Group:      Development/Tools
@@ -100,7 +100,8 @@ fi
 %{_mandir}/man1/*
 
 %changelog
-* Mon Feb 27 2017 Alexandru Gagniuc <mr.nuke.me@gmail.com> - 0.10.0-2
+
+* Mon Feb 27 2017 Alexandru Gagniuc 0.10.1-1
 - Merge ARC branch into openocd sources
 - Use github branch for SCM since most of this is unmerged
 
