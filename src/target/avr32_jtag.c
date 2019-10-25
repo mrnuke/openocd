@@ -47,7 +47,7 @@ static int avr32_jtag_set_instr(struct avr32_jtag *jtag_info, int new_instr)
 
 		jtag_add_ir_scan(tap, &field, TAP_IDLE);
 		if (jtag_execute_queue() != ERROR_OK) {
-			LOG_ERROR("%s: setting address failed", __func__);
+			LOG_ERROR("%s: failed", __func__);
 			return ERROR_FAIL;
 		}
 		busy = buf_get_u32(ret, 2, 1);
@@ -83,7 +83,7 @@ int avr32_jtag_nexus_set_address(struct avr32_jtag *jtag_info,
 
 		jtag_add_dr_scan(jtag_info->tap, 2, fields, TAP_IDLE);
 		if (jtag_execute_queue() != ERROR_OK) {
-			LOG_ERROR("%s: setting address failed", __func__);
+			LOG_ERROR("%s: failed", __func__);
 			return ERROR_FAIL;
 		}
 		busy = buf_get_u32(busy_buf, 6, 1);
@@ -118,7 +118,7 @@ int avr32_jtag_nexus_read_data(struct avr32_jtag *jtag_info,
 		jtag_add_dr_scan(jtag_info->tap, 2, fields, TAP_IDLE);
 
 		if (jtag_execute_queue() != ERROR_OK) {
-			LOG_ERROR("%s: reading data  failed", __func__);
+			LOG_ERROR("%s: failed", __func__);
 			return ERROR_FAIL;
 		}
 
@@ -158,7 +158,7 @@ int avr32_jtag_nexus_write_data(struct avr32_jtag *jtag_info,
 		jtag_add_dr_scan(jtag_info->tap, 2, fields, TAP_IDLE);
 
 		if (jtag_execute_queue() != ERROR_OK) {
-			LOG_ERROR("%s: reading data  failed", __func__);
+			LOG_ERROR("%s: failed", __func__);
 			return ERROR_FAIL;
 		}
 
@@ -219,7 +219,7 @@ int avr32_jtag_mwa_set_address(struct avr32_jtag *jtag_info, int slave,
 
 		jtag_add_dr_scan(jtag_info->tap, 2, fields, TAP_IDLE);
 		if (jtag_execute_queue() != ERROR_OK) {
-			LOG_ERROR("%s: setting address failed", __func__);
+			LOG_ERROR("%s: failed", __func__);
 			return ERROR_FAIL;
 		}
 		busy = buf_get_u32(busy_buf, 1, 1);
@@ -253,7 +253,7 @@ int avr32_jtag_mwa_read_data(struct avr32_jtag *jtag_info,
 		jtag_add_dr_scan(jtag_info->tap, 2, fields, TAP_IDLE);
 
 		if (jtag_execute_queue() != ERROR_OK) {
-			LOG_ERROR("%s: reading data  failed", __func__);
+			LOG_ERROR("%s: failed", __func__);
 			return ERROR_FAIL;
 		}
 
@@ -293,7 +293,7 @@ int avr32_jtag_mwa_write_data(struct avr32_jtag *jtag_info,
 		jtag_add_dr_scan(jtag_info->tap, 2, fields, TAP_IDLE);
 
 		if (jtag_execute_queue() != ERROR_OK) {
-			LOG_ERROR("%s: reading data  failed", __func__);
+			LOG_ERROR("%s: failed", __func__);
 			return ERROR_FAIL;
 		}
 
