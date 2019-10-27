@@ -22,10 +22,12 @@
 #include "target.h"
 #include "jtag/jtag.h"
 #include "avr32_jtag.h"
+#include <helper/time_support.h>
 
 static int avr32_jtag_set_instr(struct avr32_jtag *jtag_info, int new_instr)
 {
 	struct jtag_tap *tap;
+	int64_t start;
 	int busy = 0;
 
 	tap = jtag_info->tap;
@@ -35,6 +37,7 @@ static int avr32_jtag_set_instr(struct avr32_jtag *jtag_info, int new_instr)
 	if (buf_get_u32(tap->cur_instr, 0, tap->ir_length) == (uint32_t)new_instr)
 		return ERROR_OK;
 
+	start = timeval_ms();
 	do {
 		struct scan_field field;
 		uint8_t t[4];
@@ -50,6 +53,12 @@ static int avr32_jtag_set_instr(struct avr32_jtag *jtag_info, int new_instr)
 			LOG_ERROR("%s: failed", __func__);
 			return ERROR_FAIL;
 		}
+
+		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
+			LOG_ERROR("%s: timeout", __func__);
+			return ERROR_FAIL;
+		}
+
 		busy = buf_get_u32(ret, 2, 1);
 	} while (busy);
 
@@ -62,10 +71,12 @@ int avr32_jtag_nexus_set_address(struct avr32_jtag *jtag_info,
 	struct scan_field fields[2];
 	uint8_t addr_buf[4];
 	uint8_t busy_buf[4];
-	int busy;
+	int64_t start;
+	int busy, error;
 
 	memset(fields, 0, sizeof(fields));
 
+	start = timeval_ms();
 	do {
 		memset(addr_buf, 0, sizeof(addr_buf));
 		memset(busy_buf, 0, sizeof(busy_buf));
@@ -86,7 +97,18 @@ int avr32_jtag_nexus_set_address(struct avr32_jtag *jtag_info,
 			LOG_ERROR("%s: failed", __func__);
 			return ERROR_FAIL;
 		}
+
+		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
+			LOG_ERROR("%s: timeout", __func__);
+			return ERROR_FAIL;
+		}
+
 		busy = buf_get_u32(busy_buf, 6, 1);
+		error = buf_get_u32(busy_buf, 7, 1);
+		if (error) {
+			LOG_ERROR("%s: Chip internal error", __func__);
+			return ERROR_FAIL;
+		}
 	} while (busy);
 
 	return ERROR_OK;
@@ -100,8 +122,10 @@ int avr32_jtag_nexus_read_data(struct avr32_jtag *jtag_info,
 	struct scan_field fields[2];
 	uint8_t data_buf[4];
 	uint8_t busy_buf[4];
+	int64_t start;
 	int busy;
 
+	start = timeval_ms();
 	do {
 		memset(data_buf, 0, sizeof(data_buf));
 		memset(busy_buf, 0, sizeof(busy_buf));
@@ -122,6 +146,11 @@ int avr32_jtag_nexus_read_data(struct avr32_jtag *jtag_info,
 			return ERROR_FAIL;
 		}
 
+		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
+			LOG_ERROR("%s: timeout", __func__);
+			return ERROR_FAIL;
+		}
+
 		busy = buf_get_u32(busy_buf, 0, 1);
 	} while (busy);
 
@@ -138,8 +167,10 @@ int avr32_jtag_nexus_write_data(struct avr32_jtag *jtag_info,
 	uint8_t data_buf[4];
 	uint8_t busy_buf[4];
 	uint8_t dummy_buf[4];
+	int64_t start;
 	int busy;
 
+	start = timeval_ms();
 	do {
 		memset(data_buf, 0, sizeof(data_buf));
 		memset(busy_buf, 0, sizeof(busy_buf));
@@ -159,6 +190,11 @@ int avr32_jtag_nexus_write_data(struct avr32_jtag *jtag_info,
 
 		if (jtag_execute_queue() != ERROR_OK) {
 			LOG_ERROR("%s: failed", __func__);
+			return ERROR_FAIL;
+		}
+
+		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
+			LOG_ERROR("%s: timeout", __func__);
 			return ERROR_FAIL;
 		}
 
@@ -196,10 +232,12 @@ int avr32_jtag_mwa_set_address(struct avr32_jtag *jtag_info, int slave,
 	uint8_t addr_buf[4];
 	uint8_t slave_buf[4];
 	uint8_t busy_buf[4];
+	int64_t start;
 	int busy;
 
 	memset(fields, 0, sizeof(fields));
 
+	start = timeval_ms();
 	do {
 		memset(addr_buf, 0, sizeof(addr_buf));
 		memset(busy_buf, 0, sizeof(busy_buf));
@@ -222,6 +260,12 @@ int avr32_jtag_mwa_set_address(struct avr32_jtag *jtag_info, int slave,
 			LOG_ERROR("%s: failed", __func__);
 			return ERROR_FAIL;
 		}
+
+		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
+			LOG_ERROR("%s: timeout", __func__);
+			return ERROR_FAIL;
+		}
+
 		busy = buf_get_u32(busy_buf, 1, 1);
 	} while (busy);
 
@@ -235,8 +279,10 @@ int avr32_jtag_mwa_read_data(struct avr32_jtag *jtag_info,
 	struct scan_field fields[2];
 	uint8_t data_buf[4];
 	uint8_t busy_buf[4];
+	int64_t start;
 	int busy;
 
+	start = timeval_ms();
 	do {
 		memset(data_buf, 0, sizeof(data_buf));
 		memset(busy_buf, 0, sizeof(busy_buf));
@@ -257,6 +303,11 @@ int avr32_jtag_mwa_read_data(struct avr32_jtag *jtag_info,
 			return ERROR_FAIL;
 		}
 
+		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
+			LOG_ERROR("%s: timeout", __func__);
+			return ERROR_FAIL;
+		}
+
 		busy = buf_get_u32(busy_buf, 0, 1);
 	} while (busy);
 
@@ -273,8 +324,10 @@ int avr32_jtag_mwa_write_data(struct avr32_jtag *jtag_info,
 	uint8_t data_buf[4];
 	uint8_t busy_buf[4];
 	uint8_t zero_buf[4];
+	int64_t start;
 	int busy;
 
+	start = timeval_ms();
 	do {
 		memset(data_buf, 0, sizeof(data_buf));
 		memset(busy_buf, 0, sizeof(busy_buf));
@@ -294,6 +347,11 @@ int avr32_jtag_mwa_write_data(struct avr32_jtag *jtag_info,
 
 		if (jtag_execute_queue() != ERROR_OK) {
 			LOG_ERROR("%s: failed", __func__);
+			return ERROR_FAIL;
+		}
+
+		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
+			LOG_ERROR("%s: timeout", __func__);
 			return ERROR_FAIL;
 		}
 

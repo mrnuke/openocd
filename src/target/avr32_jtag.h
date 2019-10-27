@@ -80,6 +80,9 @@
 #define	MTSR(sysreg, reg)		(0xe3b00002 | ((reg) << 16) | sysreg)
 #define	MFSR(reg, sysreg)		(0xe1b00002 | ((reg) << 16) | sysreg)
 
+#define AVR32_UOP_TIMEOUT_MS		1000
+#define AVR32_OP_TIMEOUT_MS		5000
+
 struct avr32_jtag {
 	struct jtag_tap *tap;
 	uint32_t dpc; /* Debug PC value */
