@@ -30,17 +30,24 @@ static int avr32_jtag_read_reg(struct avr32_jtag *jtag_info, int reg,
 {
 	int retval;
 	uint32_t dcsr;
+	int64_t start;
 
 	retval = avr32_jtag_exec(jtag_info, MTDR(AVR32_OCDREG_DCCPU, reg));
 	if (retval != ERROR_OK)
 		return retval;
 
+	start = timeval_ms();
 	do {
 		retval = avr32_jtag_nexus_read(jtag_info,
 			AVR32_OCDREG_DCSR, &dcsr);
 
 		if (retval != ERROR_OK)
 			return retval;
+
+		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
+			LOG_ERROR("%s: timeout with DCSR %x", __func__, dcsr);
+			return ERROR_TIMEOUT_REACHED;
+		}
 	} while (!(dcsr & OCDREG_DCSR_CPUD));
 
 	retval = avr32_jtag_nexus_read(jtag_info,

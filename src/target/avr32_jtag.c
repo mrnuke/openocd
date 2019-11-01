@@ -56,7 +56,7 @@ static int avr32_jtag_set_instr(struct avr32_jtag *jtag_info, int new_instr)
 
 		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
 			LOG_ERROR("%s: timeout", __func__);
-			return ERROR_FAIL;
+			return ERROR_TIMEOUT_REACHED;
 		}
 
 		busy = buf_get_u32(ret, 2, 1);
@@ -100,7 +100,7 @@ int avr32_jtag_nexus_set_address(struct avr32_jtag *jtag_info,
 
 		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
 			LOG_ERROR("%s: timeout", __func__);
-			return ERROR_FAIL;
+			return ERROR_TIMEOUT_REACHED;
 		}
 
 		busy = buf_get_u32(busy_buf, 6, 1);
@@ -148,7 +148,7 @@ int avr32_jtag_nexus_read_data(struct avr32_jtag *jtag_info,
 
 		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
 			LOG_ERROR("%s: timeout", __func__);
-			return ERROR_FAIL;
+			return ERROR_TIMEOUT_REACHED;
 		}
 
 		busy = buf_get_u32(busy_buf, 0, 1);
@@ -195,7 +195,7 @@ int avr32_jtag_nexus_write_data(struct avr32_jtag *jtag_info,
 
 		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
 			LOG_ERROR("%s: timeout", __func__);
-			return ERROR_FAIL;
+			return ERROR_TIMEOUT_REACHED;
 		}
 
 		busy = buf_get_u32(busy_buf, 0, 0);
@@ -263,7 +263,7 @@ int avr32_jtag_mwa_set_address(struct avr32_jtag *jtag_info, int slave,
 
 		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
 			LOG_ERROR("%s: timeout", __func__);
-			return ERROR_FAIL;
+			return ERROR_TIMEOUT_REACHED;
 		}
 
 		busy = buf_get_u32(busy_buf, 1, 1);
@@ -305,7 +305,7 @@ int avr32_jtag_mwa_read_data(struct avr32_jtag *jtag_info,
 
 		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
 			LOG_ERROR("%s: timeout", __func__);
-			return ERROR_FAIL;
+			return ERROR_TIMEOUT_REACHED;
 		}
 
 		busy = buf_get_u32(busy_buf, 0, 1);
@@ -352,7 +352,7 @@ int avr32_jtag_mwa_write_data(struct avr32_jtag *jtag_info,
 
 		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
 			LOG_ERROR("%s: timeout", __func__);
-			return ERROR_FAIL;
+			return ERROR_TIMEOUT_REACHED;
 		}
 
 		busy = buf_get_u32(busy_buf, 0, 1);
@@ -385,15 +385,22 @@ int avr32_jtag_exec(struct avr32_jtag *jtag_info, uint32_t inst)
 {
 	int retval;
 	uint32_t ds;
+	int64_t start;
 
 	retval = avr32_jtag_nexus_write(jtag_info, AVR32_OCDREG_DINST, inst);
 	if (retval != ERROR_OK)
 		return retval;
 
+	start = timeval_ms();
 	do {
 		retval = avr32_jtag_nexus_read(jtag_info, AVR32_OCDREG_DS, &ds);
 		if (retval != ERROR_OK)
 			return retval;
+
+		if ((timeval_ms() - start) > AVR32_UOP_TIMEOUT_MS) {
+			LOG_ERROR("%s: timeout with DS at %08x", __func__, ds);
+			return ERROR_FAIL;
+		}
 	} while ((ds & OCDREG_DS_DBA) && !(ds & OCDREG_DS_INC));
 
 	return ERROR_OK;
