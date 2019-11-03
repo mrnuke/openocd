@@ -52,23 +52,12 @@ static int avr32_jtag_write_reg(struct avr32_jtag *jtag_info, int reg,
 		uint32_t val)
 {
 	int retval;
-	uint32_t dcsr;
 
-	/* Restore Status reg */
-	retval = avr32_jtag_nexus_write(jtag_info,
-				AVR32_OCDREG_DCEMU, val);
+	retval = avr32_jtag_nexus_write(jtag_info, AVR32_OCDREG_DCEMU, val);
 	if (retval != ERROR_OK)
 		return retval;
 
-	retval = avr32_jtag_exec(jtag_info, MFDR(reg, AVR32_OCDREG_DCEMU));
-	if (retval != ERROR_OK)
-		return retval;
-	do {
-		retval = avr32_jtag_nexus_read(jtag_info,
-			AVR32_OCDREG_DCSR, &dcsr);
-	} while (!(dcsr & OCDREG_DCSR_EMUD) && (retval == ERROR_OK));
-
-	return retval;
+	return avr32_jtag_exec(jtag_info, MFDR(reg, AVR32_OCDREG_DCEMU));
 }
 
 
